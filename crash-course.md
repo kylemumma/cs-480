@@ -7,8 +7,6 @@
 * On the right side, search for a word (e.g., "computer").
 * Notice how words like "software," "hardware," and "computing" float near it in 3D space.
 
-**Demo 2: [./crash_course/module_1/demo.py](./crash_course/module_1/demo.py)**
-
 **The Resource:** [Cohere LLM University (The Embeddings Chapter)](https://cohere.com/llmu)
 * **The specific lesson:** [Introduction to Text Embeddings](https://cohere.com/llmu/text-embeddings) & [Semantic Search](https://cohere.com/llmu/introduction-semantic-search)
 * **Why:** It is arguably the most visual, non-math-heavy explanation of what an embedding is currently on the web.
