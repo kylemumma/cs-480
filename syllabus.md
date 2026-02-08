@@ -1,0 +1,133 @@
+# CS 480: Latent Space Analysis & Engineering
+
+**Curator's Note:** This 12-week program combines the intuition of **3Blue1Brown**, the technical depth of **Andrej Karpathy**, and the clarity of **Jay Alammar**.
+
+## 📋 Course Overview
+
+* **Goal:** Build a "Semantic Atlas" (a RAG-powered visualization tool).
+* **Prerequisites:** Python proficiency, basic Linear Algebra.
+* **Tools:** `Python`, `PyTorch`, `LangChain`, `Streamlit`, `UMAP`.
+
+---
+
+## Phase I: The Physics of Meaning (Weeks 1-2)
+*The mathematical foundation of how "meaning" becomes geometry.*
+
+### Week 1: The Vector Space Model
+**Topic:** How we turn words into numbers without losing their soul.
+
+* **📺 Watch (Intuition):** [3Blue1Brown: Essence of Linear Algebra](https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab)
+    * **Assignment:** Watch Chapters 1-3 (Vectors, Linear Combinations, Matrices). *This is non-negotiable.*
+* **📖 Read (Theory):** [Google Machine Learning Crash Course: Embeddings](https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture)
+    * **Focus:** Read the sections on "Translating to a Lower-Dimensional Space" and "Motivation."
+* **💻 Lab (Code):** [PyTorch: Word Embeddings Tutorial](https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html)
+    * **Task:** Run the N-Gram Language Modeling example.
+
+### Week 2: The Manifold Hypothesis
+**Topic:** Why high-dimensional data lives on "thin sheets" and how topology explains AI.
+
+* **📖 Read (Deep Dive):** [Colah's Blog: Neural Networks, Manifolds, and Topology](https://colah.github.io/posts/2014-03-NN-Manifolds-Topology/)
+    * **Note:** This is a classic. It visualizes how neural networks "fold" space to separate data.
+* **📺 Watch:** [Numberphile: Topology & The Möbius Strip](https://www.youtube.com/watch?v=AmgkSdhK4K8)
+    * **Why:** To understand continuous deformation without tearing.
+* **💻 Lab:** [Scikit-Learn: Manifold Learning](https://scikit-learn.org/stable/modules/manifold.html)
+    * **Task:** Run the "S-Curve" reduction example to see how different algorithms (IsoMap, LLE) flatten a 3D shape into 2D.
+
+---
+
+## Phase II: The Encoder (Weeks 3-4)
+*Understanding the engines that generate the embeddings.*
+
+### Week 3: Transformers & Attention
+**Topic:** The architecture that conquered the world.
+
+* **📖 Read (The Bible of NLP):** [The Illustrated Transformer (Jay Alammar)](https://jalammar.github.io/illustrated-transformer/)
+    * **Focus:** Understand the "Query, Key, Value" vectors. This is the mechanism of gravity.
+* **📺 Watch (Code Along):** [Andrej Karpathy: Let's build GPT](https://www.youtube.com/watch?v=kCc8FmEb1nY)
+    * **Task:** You don't need to build the whole thing, but watch the first hour where he builds the Bigram model and explains Self-Attention.
+
+### Week 4: Contrastive Learning (CLIP)
+**Topic:** Connecting text to images.
+
+* **📖 Read:** [OpenAI: CLIP - Connecting Text and Images](https://openai.com/research/clip)
+    * **Focus:** The "Contrastive Pre-training" diagram.
+* **📺 Watch:** [Yannic Kilcher: CLIP Paper Explained](https://www.youtube.com/watch?v=T9XSU0pKX2E)
+* **💻 Lab:** [Hugging Face: Zero-Shot Image Classification with CLIP](https://huggingface.co/docs/transformers/model_doc/clip)
+    * **Task:** Use a pre-trained CLIP model to classify images using text descriptions that the model has never seen before.
+
+---
+
+## Phase III: Engineering the Void (Weeks 5-7)
+*How to store, search, and retrieve vectors at scale.*
+
+### Week 5: Indexing & HNSW
+**Topic:** How to search 100 million vectors in 10ms.
+
+* **📖 Read:** [Pinecone: Hierarchical Navigable Small Worlds (HNSW)](https://www.pinecone.io/learn/series/faiss/hnsw/)
+    * **Focus:** The "Skip List" analogy. This is the best technical explanation of the algorithm available.
+* **📺 Watch:** [Faiss: Billion-scale similarity search with GPUs](https://www.youtube.com/watch?v=QAitbF7g854)
+    * **Speaker:** Matthijs Douze (Meta AI).
+
+### Week 6: Vector Databases
+**Topic:** Moving from scripts to production databases.
+
+* **💻 Lab (Choose One):**
+    * **Option A (Open Source):** ChromaDB Getting Started. Run it locally in a Jupyter notebook.
+    * **Option B (Cloud):** Pinecone Quickstart. Set up a free index.
+    * **Task:** Take your embeddings from Week 1/3 and insert them into the DB. Perform a "Nearest Neighbor" search.
+
+### Week 7: RAG (Retrieval Augmented Generation)
+**Topic:** Connecting the Database to the LLM.
+
+* **📖 Read:** [LangChain: RAG Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
+* **📺 Watch:** [IBM Technology: What is RAG?](https://www.youtube.com/watch?v=T-D1OfcDW1M)
+* **💻 Lab:** [DeepLearning.AI: LangChain for LLM Application Development](https://www.deeplearning.ai/short-courses/langchain-for-llm-application-development/)
+    * **Note:** This is a free 1-hour course by Andrew Ng and Harrison Chase (Creator of LangChain).
+
+---
+
+## Phase IV: The Cartography (Weeks 8-10)
+*Visualizing the high-dimensional space.*
+
+### Week 8: PCA (Global Structure)
+**Topic:** Smashing 1500 dimensions down to 2.
+
+* **📺 Watch:** [StatQuest: PCA Main Ideas](https://www.youtube.com/watch?v=HMOI_lkzW08)
+    * **Why:** Bam does the best job explaining "Eigenvectors" without making you cry.
+* **💻 Lab:** Scikit-Learn: PCA Visualization of Iris Dataset
+
+### Week 9: UMAP & t-SNE (Local Topology)
+**Topic:** Preserving the "neighborhoods" and clusters.
+
+* **📖 Read (Interactive):** [Distill.pub: Visualizing Representations](https://distill.pub/2019/visualizing-representations/)
+    * **Task:** Play with the sliders. Understand how "Perplexity" changes the shape of the clusters.
+* **📖 Read (Deep):** [Coenen & Pearce: Understanding UMAP](https://pair-code.github.io/understanding-umap/)
+* **💻 Lab:** [UMAP for Python Documentation](https://umap-learn.readthedocs.io/en/latest/)
+    * **Task:** Run UMAP on the MNIST (digits) dataset and plot it.
+
+### Week 10: The Semantic Atlas
+**Topic:** Putting it all together.
+
+* **📺 Watch:** [Nomic AI: Atlas Demo](https://atlas.nomic.ai/)
+    * **Inspiration:** See what a production-grade map looks like.
+* **💻 Lab:** Streamlit: Build a RAG Chatbot
+
+---
+
+## Phase V: Final Project (Weeks 11-12)
+
+### 🚀 Project Title: The Semantic Librarian
+
+**The Prompt:**
+> "Build a tool that allows a user to upload a PDF. The tool must visualize the PDF as a 'Galaxy of Concepts' (UMAP scatter plot). When the user clicks a cluster on the map, the LLM should summarize only that cluster."
+
+**Required Tech Stack:**
+* **Ingestion:** `PyPDF2` (to read the PDF) + `LangChain` (to chunk it).
+* **Embedding:** OpenAI Embeddings or HuggingFace InstructEmbeddings.
+* **Storage:** `ChromaDB` (Local Vector DB).
+* **Visualization:** `UMAP` (dimensionality reduction) + `Plotly` (interactive charts).
+* **Interface:** `Streamlit` (Web UI).
+
+**Deliverables:**
+1.  A GitHub repository with your code.
+2.  A 2-minute Loom video demonstrating you "flying" through the data map and asking the LLM questions about specific clusters.
