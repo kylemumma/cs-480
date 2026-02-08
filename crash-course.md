@@ -2,6 +2,7 @@
 
 ### Module 1: The Intuition (The "Explorer" Hook)
 *Instead of a dry lecture, start with the people who visualize this best.*
+* **Goal:** "Get the vibe."
 
 **Demo 1: [TensorFlow Embedding Projector](https://projector.tensorflow.org/)**
 * On the right side, search for a word (e.g., "computer").
@@ -18,6 +19,8 @@
 
 ### Module 2: The Engineering (The "Builder" Skills)
 *For the RAG/Vector DB part, don't guess. Use the industry standard.*
+* **Goal:** Build a working RAG bot in a notebook.
+
 
 **The Resource:** [DeepLearning.AI: Vector Databases (with Pinecone)](https://www.deeplearning.ai/short-courses/vector-databases-embeddings-applications/)
 * **Why:** It’s free, it’s 1 hour long, and it’s taught by the people who built the database. It covers "HNSW" (the index) and "RAG" perfectly.
@@ -29,6 +32,8 @@
 
 ### Module 3: The Visualization (The "Art" Project)
 *This is the hardest part to find. Most courses stop at "PCA."*
+* **Goal:** Run it on your own PDF. **This is the final project.**
+
 
 **The Resource:** [SciKit-Learn "Manifold Learning" Documentation](https://scikit-learn.org/stable/modules/manifold.html)
 * **Why:** Surprisingly, the official docs are better than most courses. They have a visual gallery comparing t-SNE, UMAP (via libraries), and Isomap on the "S-Curve" dataset.
@@ -38,20 +43,5 @@
 
 ---
 
-## The "CS 480" Assembly Instructions
-*If I were you, I would not sign up for a generic Coursera course. I would do this:*
-
-### Week 1: Visuals
-* **Action:** Read Jay Alammar and play with the TensorFlow Projector.
-* **Goal:** "Get the vibe."
-
-### Week 2: The Tool
-* **Action:** Take the DeepLearning.AI "Vector Databases" short course (1 hour).
-* **Goal:** Build a working RAG bot in a notebook.
-
-### Week 3: The Map
-* **Action:** Clone the RAGxplorer repo.
-* **Goal:** Run it on your own PDF. **This is the final project.**
-
-### Week 4: The Deep Dive
+### Extra Credit
 * **Action:** If (and only if) you are still interested, read the HNSW and UMAP papers to understand why Week 3 worked.
