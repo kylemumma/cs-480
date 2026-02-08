@@ -3,8 +3,8 @@
 ### Module 1: The Intuition (The "Explorer" Hook)
 *Instead of a dry lecture, start with the people who visualize this best.*
 
-**The Resource:** [Cohere LLM University (The Embeddings Chapter)](https://cohere.com/llm-university)
-* **The specific lesson:** "What are Text Embeddings?" & "Semantic Search."
+**The Resource:** [Cohere LLM University (The Embeddings Chapter)](https://cohere.com/llmu)
+* **The specific lesson:** [Introduction to Text Embeddings](https://cohere.com/llmu/text-embeddings) & [Semantic Search](https://cohere.com/llmu/introduction-semantic-search)
 * **Why:** It is arguably the most visual, non-math-heavy explanation of what an embedding is currently on the web.
 
 **The Resource:** [Jay Alammar’s "The Illustrated Word2Vec"](https://jalammar.github.io/illustrated-word2vec/)
