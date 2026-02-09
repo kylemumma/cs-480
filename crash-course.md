@@ -37,13 +37,8 @@ The legendary blog post that everyone in the industry actually read to understan
 ### 🛠️ Exercise: Naive RAG from Scratch (Do This First)
 
 Before touching any vector database, build the dumbest possible RAG pipeline in a notebook:
-
-1. Load a short PDF (5–10 pages) using `PyMuPDF` or `pdfplumber`.
-2. Split it into chunks (start with fixed-size, ~300 tokens each, with ~50 token overlap).
-3. Embed each chunk using `sentence-transformers` or the OpenAI API.
-4. Store the embeddings in a plain NumPy array.
-5. Given a user query, embed it, compute cosine similarity against all chunks, and retrieve the top 5.
-6. Pass those chunks as context to an LLM (OpenAI, Anthropic, or a local model) and get an answer.
+do this tutorial with your own pdf for the dataset
+[Retrieval Augmented Generation from Scratch: Inception RAG](https://codeawake.com/blog/rag-from-scratch)
 
 **Why this matters:** You need to feel the pain of brute-force search, bad chunking, and irrelevant retrieval *before* you'll appreciate what Pinecone and HNSW solve.
 

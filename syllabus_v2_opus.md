@@ -99,14 +99,11 @@ note: this is the opus 4.6's revised version of the 12-week in depth syllabus. i
 
 **Topic:** Build the dumbest possible RAG pipeline so you feel the pain that proper tools solve.
 
-**💻 Lab (Build This):**
-
-1. Load a short PDF (5–10 pages) using `PyMuPDF` or `pdfplumber`.
-2. Split it into fixed-size chunks (~300 tokens, ~50 token overlap).
-3. Embed each chunk using `sentence-transformers`.
-4. Store the embeddings in a plain NumPy array.
-5. Given a user query, embed it, compute cosine similarity against all chunks, retrieve the top 5.
-6. Pass those chunks as context to an LLM and get an answer.
+["Learn RAG From Scratch – Python AI Tutorial from a LangChain Engineer" by freeCodeCamp.org](https://www.youtube.com/watch?v=sVcwVQRHIc8)
+or maybe
+Daniel Bourke's "Local RAG From Scratch"
+* Do this [https://github.com/mrdbourke/simple-local-rag](https://github.com/mrdbourke/simple-local-rag)
+* if you get stuck refer to the video [https://www.youtube.com/watch?v=qN_2fnOPY-M](https://www.youtube.com/watch?v=qN_2fnOPY-M)
 
 **✅ Checkpoint:** Your pipeline answers questions about your PDF. Write down 3 queries where it worked well and 3 where it failed. For the failures, look at what chunks were actually retrieved — was the problem bad retrieval, bad chunking, or bad generation?
 
