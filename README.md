@@ -1,7 +1,7 @@
 I recommend you first take a look at [crash-course.md](./crash-course.md) (this is what I am currently doing)
 
 ![Knowledge Map](./screenshots/4-module2.png)
-*3D visualization of textbook embeddings colored by page number*
+*3D visualization of textbook embeddings clustered using HDBSCAN*
 
 ## Running the code
 * for `.ipynb` use google colab
