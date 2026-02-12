@@ -13,7 +13,7 @@ from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
 
 
-def find_pdf() -> str:
+def find_pdf() -> Path:
     docpath = None
     for filename in os.listdir(Path(__file__).parent):
         if filename.endswith(".pdf"):
@@ -26,7 +26,7 @@ def find_pdf() -> str:
 
 
 # chunk
-def chunk(pdf_path: str) -> list[Element]:
+def chunk(pdf_path: Path) -> list[Element]:
     print("Chunking...")
     elements = partition_pdf(filename=str(pdf_path), languages=["eng"])
     chunks = chunk_by_title(
@@ -65,7 +65,16 @@ def reduce_to_3d(embeddings):
 
 
 def visualize(df):
-    fig = px.scatter_3d(df, x="x", y="y", z="z", hover_data=["text"], opacity=0.5)
+    fig = px.scatter_3d(
+        df,
+        x="x",
+        y="y",
+        z="z",
+        hover_data=["text"],
+        opacity=0.5,
+        color="page_number",
+        color_continuous_scale="viridis",
+    )
     # dot size
     fig.update_traces(marker=dict(size=4))
 
@@ -101,17 +110,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--umap", action="store_true", help="Force regenerate UMAP projection"
     )
+    parser.add_argument("--chunk", action="store_true", help="Force regenerate Chunks")
     args = parser.parse_args()
 
     # read and chunk pdf
-    if Path("chunks.csv").exists():
+    redo_chunks = args.chunk or not Path("chunks.csv").exists()
+    if not redo_chunks:
         df = pd.read_csv(Path("chunks.csv"))
         print("successfully loaded dataframe")
     else:
         path = find_pdf()
         chunks = chunk(path)
         df = pd.DataFrame()
-        df["text"] = [c.text for c in chunks]
+        df[["text", "page_number"]] = [(c.text, c.metadata.page_number) for c in chunks]
         df.to_csv("chunks.csv")
 
     # embed chunks
