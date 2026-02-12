@@ -1,11 +1,11 @@
 I recommend you first take a look at [crash-course.md](./crash-course.md) (this is what I am currently doing)
 
-![Knowledge Map](./screenshots/2-module2.png)
+![Knowledge Map](./screenshots/4-module2.png)
 *3D visualization of textbook embeddings colored by page number*
 
 ## Running the code
-for `.ipynb` use google colab
-for `.py` the repo uses `uv` - ex: `uv sync`, `uv run crash_course/module_2/naive_rag.py`
+* for `.ipynb` use google colab
+* for `.py` the repo uses `uv` - ex: `uv sync`, `uv run crash_course/module_2/naive_rag.py`
 
 
 

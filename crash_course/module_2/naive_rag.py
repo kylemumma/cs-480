@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
+import hdbscan
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -59,9 +60,29 @@ def embed(model: SentenceTransformer, chunks: list[str]) -> NDArray:
 
 
 # pandas
-def reduce_to_3d(embeddings):
-    reducer = umap.UMAP(n_components=3, n_neighbors=7, min_dist=0.05, metric="cosine")
-    return reducer.fit_transform(embeddings)
+def reduce_to_nd(embeddings: NDArray, n: int) -> NDArray:
+    print(f"transforming to {n}-d...")
+    reducer = umap.UMAP(n_components=n, n_neighbors=7, min_dist=0.05, metric="cosine")
+    res = reducer.fit_transform(embeddings)
+    return res  # type: ignore
+
+
+def find_clusters(embeddings: NDArray):
+    print("finding clusters...")
+    clusterer = hdbscan.HDBSCAN(
+        gen_min_span_tree=True,
+        min_cluster_size=15,
+    )
+    res = clusterer.fit(embeddings)
+    noise_ctr = 0
+    cluster_set = set()
+    for e in res.labels_:
+        if e == -1:
+            noise_ctr += 1
+        else:
+            cluster_set.add(e)
+    print(f"successfully found clusters: {cluster_set} with {noise_ctr} outliers")
+    return res
 
 
 def visualize(df):
@@ -72,8 +93,9 @@ def visualize(df):
         z="z",
         hover_data=["text"],
         opacity=0.5,
-        color="page_number",
-        color_continuous_scale="viridis",
+        color="cluster",
+        color_discrete_map={"-1": "lightgray"},  # Override for outliers
+        color_discrete_sequence=px.colors.qualitative.Bold,
     )
     # dot size
     fig.update_traces(marker=dict(size=4))
@@ -111,11 +133,14 @@ if __name__ == "__main__":
         "--umap", action="store_true", help="Force regenerate UMAP projection"
     )
     parser.add_argument("--chunk", action="store_true", help="Force regenerate Chunks")
+    parser.add_argument(
+        "--cluster", action="store_true", help="Force regenerate Clusterings"
+    )
     args = parser.parse_args()
 
     # read and chunk pdf
-    redo_chunks = args.chunk or not Path("chunks.csv").exists()
-    if not redo_chunks:
+    regen_chunks = args.chunk or not Path("chunks.csv").exists()
+    if not regen_chunks:
         df = pd.read_csv(Path("chunks.csv"))
         print("successfully loaded dataframe")
     else:
@@ -125,8 +150,9 @@ if __name__ == "__main__":
         df[["text", "page_number"]] = [(c.text, c.metadata.page_number) for c in chunks]
         df.to_csv("chunks.csv")
 
-    # embed chunks
-    if Path("embeds.npy").exists():
+    # embed the chunks
+    regen_embeds = regen_chunks or not Path("embeds.npy").exists()
+    if not regen_embeds:
         embeds = np.load("embeds.npy")
         print("successfully loaded embeddings")
     else:
@@ -136,13 +162,21 @@ if __name__ == "__main__":
         embeds = embed(model, df["text"].tolist())
         np.save("embeds.npy", embeds)
 
+    # HDBSCAN Clustering
+    regen_clusters = args.cluster or regen_embeds or "cluster" not in df
+    if regen_clusters:
+        clusters = find_clusters(reduce_to_nd(embeds, 8))
+        df["cluster"] = [str(e) for e in clusters.labels_]
+        df.to_csv("chunks.csv")
+    else:
+        print("successfully loaded clusters")
+
     # use umap to transform to 3d (for visualization)
-    if not args.umap and all(e in df for e in ["x", "y", "z"]):
+    regen_umap = args.umap or regen_embeds or not all(e in df for e in ["x", "y", "z"])
+    if not regen_umap:
         print("successfully loaded umap")
     else:
-        print("transforming to 3d...")
-        df[["x", "y", "z"]] = reduce_to_3d(embeds)
+        df[["x", "y", "z"]] = reduce_to_nd(embeds, 3)
         df.to_csv("chunks.csv")
-        print("done")
 
     visualize(df)

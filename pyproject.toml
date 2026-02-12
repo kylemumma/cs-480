@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "einops>=0.8.2",
+    "hdbscan>=0.8.41",
     "pdfminer>=20191125",
     "plotly>=6.5.2",
     "sentence-transformers>=5.2.2",
