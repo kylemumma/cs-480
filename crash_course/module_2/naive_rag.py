@@ -9,6 +9,7 @@ import plotly.express as px
 import umap
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from unstructured.chunking.title import chunk_by_title
 from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
@@ -91,9 +92,9 @@ def visualize(df):
         x="x",
         y="y",
         z="z",
-        hover_data=["text"],
+        hover_data=["keywords"],
         opacity=0.5,
-        color="cluster",
+        color="cluster_label",
         color_discrete_map={"-1": "lightgray"},  # Override for outliers
         color_discrete_sequence=px.colors.qualitative.Bold,
     )
@@ -127,6 +128,40 @@ def visualize(df):
     fig.show()
 
 
+def _get_topics_ctfidf(cluster_docs: pd.DataFrame, n_words: int = 5) -> pd.DataFrame:
+    # run c-TF-IDF on each superdoc to get scores for each word
+    tfidf = TfidfVectorizer(
+        stop_words="english", max_df=12, token_pattern=r"\b[a-zA-Z]{3,}\b"
+    )
+    # each row is a cluster, each column is a word score
+    tftid_matrix = tfidf.fit_transform(cluster_docs.text)
+    # this correlates the word score column numbers in the matrix with the actual word
+    feature_names = np.array(tfidf.get_feature_names_out())
+    cluster_topics = []
+    for i, cluster in enumerate(cluster_docs.cluster):
+        top_indices = tftid_matrix[i].toarray()[0].argsort()[::-1][:n_words]  # type: ignore
+        keywords = feature_names[top_indices]
+        cluster_topics.append({"cluster": cluster, "keywords": ", ".join(keywords)})
+    return pd.DataFrame(cluster_topics)
+
+
+def get_cluster_topics(df: pd.DataFrame):
+    # combine all text chunks for a cluster into one continuous string
+    cluster_superdocs = df.groupby(["cluster"], as_index=False).agg({"text": " ".join})
+    topics = _get_topics_ctfidf(cluster_superdocs)  # type: ignore
+    return topics
+
+
+def save_df(df: pd.DataFrame, path="data.parquet"):
+    df.to_parquet(path)
+
+
+def load_df(path="data.parquet") -> pd.DataFrame | None:
+    if not Path(path).exists():
+        return None
+    return pd.read_parquet(path)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -138,17 +173,17 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    df = load_df()
     # read and chunk pdf
-    regen_chunks = args.chunk or not Path("chunks.csv").exists()
-    if not regen_chunks:
-        df = pd.read_csv(Path("chunks.csv"))
-        print("successfully loaded dataframe")
-    else:
+    regen_chunks = args.chunk
+    if regen_chunks or df is None:
         path = find_pdf()
         chunks = chunk(path)
         df = pd.DataFrame()
         df[["text", "page_number"]] = [(c.text, c.metadata.page_number) for c in chunks]
-        df.to_csv("chunks.csv")
+        save_df(df)
+    else:
+        print("successfully loaded dataframe")
 
     # embed the chunks
     regen_embeds = regen_chunks or not Path("embeds.npy").exists()
@@ -167,9 +202,14 @@ if __name__ == "__main__":
     if regen_clusters:
         clusters = find_clusters(reduce_to_nd(embeds, 8))
         df["cluster"] = [str(e) for e in clusters.labels_]
-        df.to_csv("chunks.csv")
+        save_df(df)
     else:
         print("successfully loaded clusters")
+
+    topics_df = get_cluster_topics(df)
+    df = df.merge(topics_df, left_on="cluster", right_on="cluster", how="left")
+    df["cluster_label"] = df["cluster"] + ": " + df["keywords"]
+    df.loc[df["cluster"] == "-1", "cluster_label"] = "Noise"
 
     # use umap to transform to 3d (for visualization)
     regen_umap = args.umap or regen_embeds or not all(e in df for e in ["x", "y", "z"])
