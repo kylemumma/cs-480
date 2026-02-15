@@ -70,7 +70,6 @@ class DocumentEmbedder:
 
     def get_embedding(
         self,
-        regen_chunks: bool,
     ) -> NDArray:
         chunks = self.get_chunks()
         return self._embed(self._model, [e.text for e in chunks])

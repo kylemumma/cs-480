@@ -17,8 +17,9 @@ from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
 from utils import find_a_pdf, where_am_i
 
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger.setLevel(logging.INFO)
 
 
 def find_pdf() -> Path:
@@ -204,66 +205,96 @@ def load_df(path="data.parquet") -> pd.DataFrame | None:
     return pd.read_parquet(path)
 
 
+_embedder = None
+
+
+def get_embedder() -> DocumentEmbedder:
+    """
+    Returns an embedder for the first pdf it finds in the same
+    directory as this file
+    """
+    global _embedder
+    if not _embedder:
+        path = find_a_pdf(where_am_i(__file__))
+        _embedder = DocumentEmbedder(path)
+        return _embedder
+    return _embedder
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--regen-umap", action="store_true", help="Force regenerate UMAP projection"
+        "--regen-chunks", action="store_true", help="Force regenerate Chunks"
     )
     parser.add_argument(
-        "--regen-chunks", action="store_true", help="Force regenerate Chunks"
+        "--regen-embeds", action="store_true", help="Force regenerate Embeddings"
+    )
+    parser.add_argument(
+        "--regen-umap", action="store_true", help="Force regenerate UMAP projection"
     )
     parser.add_argument(
         "--recluster", action="store_true", help="Force regenerate Clusterings"
     )
     args = parser.parse_args()
 
-    print(type(__file__))
-
-    df = load_df()
-    if not args.regen_chunks and df is not None:
-        logger.info("Successfully loaded saved dataframe")
+    fresh_chunks = False
+    df_save_path = Path("data.parquet")
+    if df_save_path.exists() and not args.regen_chunks:
+        df = pd.read_parquet(df_save_path)
+        logger.info(f"Successfully loaded {df_save_path}")
     else:
-        path = find_a_pdf(where_am_i(__file__))
-        embedder = DocumentEmbedder(path)
+        fresh_chunks = True
+        logger.info("Generating chunks...")
+        embedder = get_embedder()
         chunks = embedder.get_chunks()
         df = pd.DataFrame()
         df[["text", "page_number"]] = [(c.text, c.metadata.page_number) for c in chunks]
         save_df(df)
+        logger.info("Successfully generated chunks")
 
     # embed the chunks
-    regen_embeds = args.regen_chunks or not Path("embeds.npy").exists()
-    if not regen_embeds:
-        embeds = np.load("embeds.npy")
-        print("successfully loaded embeddings")
-    else:
-        model = SentenceTransformer(
-            "nomic-ai/nomic-embed-text-v1.5", trust_remote_code=True
-        )
-        embeds = embed(model, df["text"].tolist())
+    fresh_embeds = False
+    embeds_save_path = Path("embeds.npy")
+    if fresh_chunks or args.regen_embeds or not embeds_save_path.exists():
+        logger.info("Generating Embeddings...")
+        fresh_embeds = True
+        embedder = get_embedder()
+        embeds = embedder.get_embedding()
         np.save("embeds.npy", embeds)
+        logger.info("Successfully generated embeddings")
+    else:
+        embeds = np.load(embeds_save_path)
+        logger.info(f"Successfully loaded {embeds_save_path}")
 
     # HDBSCAN Clustering
-    regen_clusters = args.recluster or regen_embeds or "cluster" not in df
-    if regen_clusters:
+    fresh_clusters = False
+    if fresh_embeds or args.recluster or "cluster" not in df:
+        logger.info("Generating clusters...")
+        fresh_cluster = True
         clusters = find_clusters(reduce_to_nd(embeds, 8))
         df["cluster"] = [str(e) for e in clusters.labels_]
         save_df(df)
+        logger.info("Successfully generated clusters...")
     else:
-        print("successfully loaded clusters")
+        logger.info(f"Successfully loaded clusters from {df_save_path}")
 
+    logger.info("Generating cluster topics...")
     topics_df = get_cluster_topics(df)
     df = df.merge(topics_df, left_on="cluster", right_on="cluster", how="left")
     df["cluster_label"] = df["cluster"] + ": " + df["keywords"]
     df.loc[df["cluster"] == "-1", "cluster_label"] = "-1: noise"
+    logger.info("Successfully generated cluster topics")
 
     # use umap to transform to 3d (for visualization)
     regen_umap = (
-        args.regen_umap or regen_embeds or not all(e in df for e in ["x", "y", "z"])
+        args.regen_umap or fresh_embeds or not all(e in df for e in ["x", "y", "z"])
     )
     if not regen_umap:
-        print("successfully loaded umap")
+        logger.info(f"Successfully loaded UMAP from {df_save_path}")
     else:
+        logger.info("Generating UMAP...")
         df[["x", "y", "z"]] = reduce_to_nd(embeds, 3)
         df.to_csv("chunks.csv")
+        logger.info("Successfully generated UMAP")
 
     visualize("Fundamentals of Data Engineering", df)

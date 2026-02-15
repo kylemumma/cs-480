@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 
-def where_am_i(file) -> Path:
+def where_am_i(file: str) -> Path:
     """
-    return a path to the dir that file is in
+    return a path to the dir that file is in. file should be __file__
     """
     return Path(file).parent
 
