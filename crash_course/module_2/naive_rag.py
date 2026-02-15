@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from pathlib import Path
 
@@ -7,12 +8,17 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import umap
+from document_embedder import DocumentEmbedder
 from numpy.typing import NDArray
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from unstructured.chunking.title import chunk_by_title
 from unstructured.documents.elements import Element
 from unstructured.partition.pdf import partition_pdf
+from utils import find_a_pdf, where_am_i
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def find_pdf() -> Path:
@@ -86,20 +92,60 @@ def find_clusters(embeddings: NDArray):
     return res
 
 
-def visualize(df):
+def visualize(
+    title: str,
+    df: pd.DataFrame,
+    width: int = 1200,
+    height: int = 800,
+    show_noise: bool = True,
+    noise_label: str = "-1: noise",
+    dot_size: int = 4,
+    opacity: float = 0.5,
+):
+    # validate input
+    for col in ["cluster_label", "x", "y", "z", "keywords"]:
+        if col not in df.columns:
+            raise ValueError(f"column {col} not found in given dataframe")
+
+    # graph clusters
+    clusters = df[df["cluster_label"] != noise_label]
     fig = px.scatter_3d(
-        df,
+        clusters,
         x="x",
         y="y",
         z="z",
-        hover_data=["keywords"],
-        opacity=0.5,
+        opacity=opacity,
         color="cluster_label",
-        color_discrete_map={"-1": "lightgray"},  # Override for outliers
         color_discrete_sequence=px.colors.qualitative.Bold,
+        hover_data={
+            "x": False,
+            "y": False,
+            "z": False,
+        },
     )
-    # dot size
-    fig.update_traces(marker=dict(size=4))
+    fig.update_traces(marker=dict(size=dot_size))
+
+    if show_noise:
+        noise = df[df["cluster_label"] == noise_label]
+        fig.add_scatter3d(
+            x=noise["x"],
+            y=noise["y"],
+            z=noise["z"],
+            mode="markers",
+            marker=dict(color="lightgray", opacity=opacity * 0.7, size=dot_size - 1),
+            name=noise_label,
+            hovertemplate="%{fullData.name}",
+            hoverlabel=dict(
+                bgcolor="#cccccc",  # Dark background
+                font_color="black",  # Force white text
+            ),
+        )
+
+    # title
+    fig.update_layout(title=title)
+
+    # figure size
+    fig.update_layout(width=width, height=height)
 
     # background color
     fig.update_layout(
@@ -111,13 +157,8 @@ def visualize(df):
         )
     )
 
-    # title
-    fig.update_layout(title="Knowledge Map")
-
-    # figure size
-    fig.update_layout(width=1200, height=800)
-
     # remove the grid for a cleaner space-like look
+    """
     fig.update_layout(
         scene=dict(
             xaxis=dict(showgrid=False, zeroline=False),
@@ -125,6 +166,7 @@ def visualize(df):
             zaxis=dict(showgrid=False, zeroline=False),
         )
     )
+    """
     fig.show()
 
 
@@ -165,28 +207,31 @@ def load_df(path="data.parquet") -> pd.DataFrame | None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--umap", action="store_true", help="Force regenerate UMAP projection"
+        "--regen-umap", action="store_true", help="Force regenerate UMAP projection"
     )
-    parser.add_argument("--chunk", action="store_true", help="Force regenerate Chunks")
     parser.add_argument(
-        "--cluster", action="store_true", help="Force regenerate Clusterings"
+        "--regen-chunks", action="store_true", help="Force regenerate Chunks"
+    )
+    parser.add_argument(
+        "--recluster", action="store_true", help="Force regenerate Clusterings"
     )
     args = parser.parse_args()
 
+    print(type(__file__))
+
     df = load_df()
-    # read and chunk pdf
-    regen_chunks = args.chunk
-    if regen_chunks or df is None:
-        path = find_pdf()
-        chunks = chunk(path)
+    if not args.regen_chunks and df is not None:
+        logger.info("Successfully loaded saved dataframe")
+    else:
+        path = find_a_pdf(where_am_i(__file__))
+        embedder = DocumentEmbedder(path)
+        chunks = embedder.get_chunks()
         df = pd.DataFrame()
         df[["text", "page_number"]] = [(c.text, c.metadata.page_number) for c in chunks]
         save_df(df)
-    else:
-        print("successfully loaded dataframe")
 
     # embed the chunks
-    regen_embeds = regen_chunks or not Path("embeds.npy").exists()
+    regen_embeds = args.regen_chunks or not Path("embeds.npy").exists()
     if not regen_embeds:
         embeds = np.load("embeds.npy")
         print("successfully loaded embeddings")
@@ -198,7 +243,7 @@ if __name__ == "__main__":
         np.save("embeds.npy", embeds)
 
     # HDBSCAN Clustering
-    regen_clusters = args.cluster or regen_embeds or "cluster" not in df
+    regen_clusters = args.recluster or regen_embeds or "cluster" not in df
     if regen_clusters:
         clusters = find_clusters(reduce_to_nd(embeds, 8))
         df["cluster"] = [str(e) for e in clusters.labels_]
@@ -209,14 +254,16 @@ if __name__ == "__main__":
     topics_df = get_cluster_topics(df)
     df = df.merge(topics_df, left_on="cluster", right_on="cluster", how="left")
     df["cluster_label"] = df["cluster"] + ": " + df["keywords"]
-    df.loc[df["cluster"] == "-1", "cluster_label"] = "Noise"
+    df.loc[df["cluster"] == "-1", "cluster_label"] = "-1: noise"
 
     # use umap to transform to 3d (for visualization)
-    regen_umap = args.umap or regen_embeds or not all(e in df for e in ["x", "y", "z"])
+    regen_umap = (
+        args.regen_umap or regen_embeds or not all(e in df for e in ["x", "y", "z"])
+    )
     if not regen_umap:
         print("successfully loaded umap")
     else:
         df[["x", "y", "z"]] = reduce_to_nd(embeds, 3)
         df.to_csv("chunks.csv")
 
-    visualize(df)
+    visualize("Fundamentals of Data Engineering", df)
