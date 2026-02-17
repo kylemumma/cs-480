@@ -278,6 +278,7 @@ if __name__ == "__main__":
     else:
         logger.info(f"Successfully loaded clusters from {df_save_path}")
 
+    # topics
     logger.info("Generating cluster topics...")
     topics_df = get_cluster_topics(df)
     df = df.merge(topics_df, left_on="cluster", right_on="cluster", how="left")

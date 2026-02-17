@@ -1,0 +1,26 @@
+graph TD
+    User((👤 User))
+
+    subgraph s2["Vector Space Data"]
+        doc["Document"]
+        chunk["Chunking Strategy (Transformation)"]
+        embed["Embedding Model"]
+        db@{ shape: "cyl", label: "Vector DB" }
+        doc --- chunk --- embed --- db
+    end
+    search@{ label: "Search Strategy" }
+    mcp@{ label: "MCP Service" }
+    agent@{ shape: "stadium", label: "Agent (Gemini CLI)" }
+
+
+    %% User Connections
+    User -->|Uploads| doc
+    User <-->|Queries| agent
+
+    %% System Connections
+    db <--> search
+    search <--> mcp
+    mcp <--> agent
+
+    style User fill:#f9f,stroke:#333,stroke-width:2px
+    style s2 stroke-dasharray: 5 5
