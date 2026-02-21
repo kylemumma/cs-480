@@ -24,10 +24,14 @@ def visualize(
     if plot_2d:
         logger.warning("2d visualization not supported yet, skipping")
     if plot_3d:
-        df = space.df
-        for col in ["cluster", "3d_x", "3d_y", "3d_z", "topic"]:
-            if col not in df.columns:
-                raise ValueError(f"column {col} not found in given dataframe")
+        for col in ["cluster", "3d_x", "3d_y", "3d_z"]:
+            if col not in space.df.columns:
+                raise ValueError(f"column {col} not found in space.df")
+        if "topic" not in space.clusters.columns:
+            raise ValueError("column topic not found in space.clusters")
+        df = space.df.drop(columns=["topic"], errors="ignore").merge(
+            space.clusters[["cluster", "topic"]], on="cluster", how="left"
+        )
 
         # graph clusters
         clusters = df[df["cluster"].astype(str) != "-1"]

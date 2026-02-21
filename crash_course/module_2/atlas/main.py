@@ -1,8 +1,14 @@
 import argparse
 import logging
 
+import pandas as pd
+
 from crash_course.module_2.atlas.classification import classify_cluster_topics
-from crash_course.module_2.atlas.cluster import generate_clusters
+from crash_course.module_2.atlas.cluster import (
+    generate_clusters,
+    get_cluster_centroids,
+    get_cluster_topics,
+)
 from crash_course.module_2.atlas.dimensionality_reducer import transform_to_3d
 from crash_course.module_2.atlas.ingest import ingest_pdf
 from crash_course.module_2.atlas.vector_space import VectorSpace
@@ -24,8 +30,11 @@ if __name__ == "__main__":
         generate_clusters(space, debug=False)
         transform_to_3d(space)  # for visualization
         classify_cluster_topics(space)
+        get_cluster_centroids(space, 5)
         space.save("fde")
 
+    # space.set_cluster_attribute("topic", pd.Series(get_cluster_topics(space)))
+    # space.save("fde")
     visualize(space)
 else:
     print(__name__)

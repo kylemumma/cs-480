@@ -19,7 +19,17 @@ class VectorSpace:
         self.df["chunk"] = [e.text for e in chunks]
         self.embeddings = embeddings
         # cluster label to vector index
-        self.clusters = None
+        self.cluster_cache: dict[str, set[int]] = dict()
+        self.clusters = (
+            pd.DataFrame()
+        )  # will start maintaining a 2nd table for clusters
+
+    def set_cluster_attribute(self, name: str, series: pd.Series):
+        if len(series) != len(self.clusters):
+            raise ValueError(
+                f"Series length {len(series)} does not match clusters length {len(self.clusters)}"
+            )
+        self.clusters[name] = series
 
     def define_clusters(self, clusters: list[str]):
         if len(clusters) != len(self.embeddings):
@@ -27,8 +37,7 @@ class VectorSpace:
                 f"There are {len(self.embeddings)} embeddings but {len(clusters)} clusters were provided"
             )
         self.df["cluster"] = clusters
-        # self.clusters
-        self._load_cluster_cache()
+        self._load_clusters()
 
     def set_positions_3d(self, matrix: np.ndarray):
         num_vectors = matrix.shape[0]
@@ -48,34 +57,18 @@ class VectorSpace:
             )
         self.df[["2d_x", "2d_y"]] = matrix
 
-    def get_cluster_topic(self, cluster: str, n: int = 5) -> list[str]:
-        if "cluster" not in self.df:
-            raise ValueError(
-                "clusters are not defined yet in your vector space, see define_clusters"
-            )
-        if cluster not in self.df["cluster"].values:
-            raise ValueError(f"Cluster '{cluster}' not found")
-        mask = np.where(self.df["cluster"].values == cluster)[0]
-        cluster_embeddings = self.embeddings[mask]
-        cluster_docs = self.df["chunk"].iloc[mask].tolist()
-
-        centroid = cluster_embeddings.mean(axis=0)
-        sims = cosine_similarity([centroid], cluster_embeddings)[0]
-        top_k = sims.argsort()[::-1][:n]
-
-        return [cluster_docs[i] for i in top_k]
-
-    def _load_cluster_cache(self):
-        self.clusters = dict()
+    def _load_clusters(self):
+        self.cluster_cache = dict()
         for i, e in enumerate(self.df["cluster"]):
             curr = str(e)
-            if curr not in self.clusters:
-                self.clusters[curr] = set()
-            self.clusters[curr].add(i)
+            if curr not in self.cluster_cache:
+                self.cluster_cache[curr] = set()
+            self.cluster_cache[curr].add(i)
 
     def save(self, save_name: str):
         Path("save").mkdir(exist_ok=True)
         self.df.to_parquet(Path(f"save/{save_name}.parquet"))
+        self.clusters.to_parquet(Path(f"save/{save_name}_clusters.parquet"))
         np.save(f"save/{save_name}.npy", self.embeddings)
 
     @classmethod
@@ -83,8 +76,9 @@ class VectorSpace:
         instance = cls.__new__(cls)
         instance.df = pd.read_parquet(Path(f"save/{save_name}.parquet"))
         instance.embeddings = np.load(f"save/{save_name}.npy")
+        instance.clusters = pd.read_parquet(Path(f"save/{save_name}_clusters.parquet"))
         instance.title = save_name
-        instance._load_cluster_cache()
+        instance._load_clusters()
         return instance
 
 
