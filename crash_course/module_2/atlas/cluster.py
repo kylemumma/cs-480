@@ -1,9 +1,11 @@
 import logging
+from pathlib import Path
 
 import hdbscan
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from hdbscan.plots import SingleLinkageTree
 from sklearn.metrics.pairwise import cosine_similarity
 
 from crash_course.module_2.atlas import llm
@@ -33,7 +35,11 @@ def generate_clusters(space: VectorSpace, debug: bool = False) -> None:
         ax2.set_title("Single Linkage Tree")
         plt.tight_layout()
         plt.show()
-    space.define_clusters([str(e) for e in clusters.labels_])
+    space.define_clusters(
+        [str(e) for e in clusters.labels_],
+        clusterer.condensed_tree_,
+        clusterer.single_linkage_tree_,
+    )
 
 
 def get_n_centroids(
@@ -94,3 +100,18 @@ def get_cluster_topics(space: VectorSpace):
     ]
     space.set_cluster_attribute("topic", pd.Series(topics))
     return topics
+
+
+def single_linkage_tree_from_df(df: pd.DataFrame) -> SingleLinkageTree:
+    return SingleLinkageTree(
+        df[["left_child", "right_child", "distance", "size"]].values
+    )
+
+
+def get_min_max_distance(slt: SingleLinkageTree) -> tuple[np.float64, np.float64]:
+    """returns (min, max)"""
+    linkage = slt.to_numpy()
+    distances = linkage[:, 2]
+    out = (distances.min(), distances.max())
+    logger.debug(out)
+    return out

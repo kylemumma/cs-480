@@ -12,7 +12,7 @@ from crash_course.module_2.atlas.cluster import (
 from crash_course.module_2.atlas.dimensionality_reducer import transform_to_3d
 from crash_course.module_2.atlas.ingest import ingest_pdf
 from crash_course.module_2.atlas.vector_space import VectorSpace
-from crash_course.module_2.atlas.visualize import visualize
+from crash_course.module_2.atlas.visualize import visualize, visualize_dynamic
 from crash_course.module_2.utils import find_a_pdf, where_am_i
 
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +20,12 @@ logging.basicConfig(level=logging.INFO)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--load", metavar="SAVE_NAME", help="Load a saved vector space")
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     args = parser.parse_args()
+
+    if args.debug:
+        logger = logging.getLogger("crash_course.module_2.atlas")
+        logger.setLevel(logging.DEBUG)
 
     if args.load:
         space = VectorSpace.load(args.load)
@@ -31,10 +36,9 @@ if __name__ == "__main__":
         transform_to_3d(space)  # for visualization
         classify_cluster_topics(space)
         get_cluster_centroids(space, 5)
+        # space.set_cluster_attribute("topic", pd.Series(get_cluster_topics(space)))
         space.save("fde")
 
-    # space.set_cluster_attribute("topic", pd.Series(get_cluster_topics(space)))
-    # space.save("fde")
-    visualize(space)
+    visualize_dynamic(space, bool(args.debug))
 else:
     print(__name__)

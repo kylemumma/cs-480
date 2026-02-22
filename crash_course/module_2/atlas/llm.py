@@ -11,8 +11,9 @@ client = genai.Client(api_key=api_key)
 
 
 def query_llm(query: str) -> str:
+    "heres a query"
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model="gemini-2.5-flash",
         contents=query,
     )
     if response.text is None:
