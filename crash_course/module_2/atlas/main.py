@@ -2,7 +2,6 @@ import argparse
 import logging
 
 import pandas as pd
-
 from crash_course.module_2.atlas.classification import classify_cluster_topics
 from crash_course.module_2.atlas.cluster import (
     generate_clusters,
@@ -12,7 +11,10 @@ from crash_course.module_2.atlas.cluster import (
 from crash_course.module_2.atlas.dimensionality_reducer import transform_to_3d
 from crash_course.module_2.atlas.ingest import ingest_pdf
 from crash_course.module_2.atlas.vector_space import VectorSpace
-from crash_course.module_2.atlas.visualize import visualize, visualize_dynamic
+from crash_course.module_2.atlas.visualize import (
+    visualize,
+    visualize_dynamic,
+)
 from crash_course.module_2.utils import find_a_pdf, where_am_i
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +41,6 @@ if __name__ == "__main__":
         # space.set_cluster_attribute("topic", pd.Series(get_cluster_topics(space)))
         space.save("fde")
 
-    visualize_dynamic(space, bool(args.debug))
+    visualize(space, bool(args.debug))
 else:
     print(__name__)
