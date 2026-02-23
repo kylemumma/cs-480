@@ -5,12 +5,13 @@ import hdbscan
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from hdbscan.plots import SingleLinkageTree
-from sklearn.metrics.pairwise import cosine_similarity
-
 from crash_course.module_2.atlas import llm
 from crash_course.module_2.atlas.dimensionality_reducer import reduce_to_nd
 from crash_course.module_2.atlas.vector_space import VectorSpace
+from hdbscan.plots import SingleLinkageTree
+from numpy.typing import ArrayLike, NDArray
+from scipy.spatial import ConvexHull
+from sklearn.metrics.pairwise import cosine_similarity
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,16 @@ def get_cluster_topics(space: VectorSpace):
     ]
     space.set_cluster_attribute("topic", pd.Series(topics))
     return topics
+
+
+def get_convex_hulls_2d(space: VectorSpace):
+    hulls: dict[str, tuple[NDArray, NDArray]] = {}
+    for cluster_id, group in space.df[space.df["cluster"] != "-1"].groupby("cluster"):
+        points = group[["2d_x", "2d_y"]].values  # type: ignore
+        hull = ConvexHull(points)  # type: ignore
+        vtx: NDArray[np.intc] = np.append(hull.vertices, hull.vertices[0])
+        hulls[str(cluster_id)] = (points[vtx, 0], points[vtx, 1])  # type: ignore
+    return hulls
 
 
 def single_linkage_tree_from_df(df: pd.DataFrame) -> SingleLinkageTree:

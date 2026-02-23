@@ -7,6 +7,7 @@ from crash_course.module_2.atlas.cluster import (
     generate_clusters,
     get_cluster_centroids,
     get_cluster_topics,
+    get_convex_hulls_2d,
 )
 from crash_course.module_2.atlas.dimensionality_reducer import (
     transform_to_2d,

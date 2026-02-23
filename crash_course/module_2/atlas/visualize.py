@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from crash_course.module_2.atlas.cluster import get_min_max_distance
+from crash_course.module_2.atlas.cluster import (
+    get_convex_hulls_2d,
+    get_min_max_distance,
+)
 from crash_course.module_2.atlas.vector_space import VectorSpace
 from dash import Dash, Input, Output, dcc, html
 from hdbscan.plots import CondensedTree, SingleLinkageTree
@@ -77,6 +80,7 @@ def visualize_2d(
     HEIGHT = 800
     DOT_SIZE = 12
     OPACITY = 0.6
+    PALETTE = px.colors.qualitative.Plotly
     # if debug:
     # show_debug_info(space.condensed_tree, space.single_linkage_tree)
     if not space.has_position_2d:
@@ -90,25 +94,36 @@ def visualize_2d(
         x="2d_x",
         y="2d_y",
         color="label",
-        color_discrete_sequence=px.colors.qualitative.Plotly,
-        hover_data={
-            "2d_x": False,
-            "2d_y": False,
-            "topic": True,
-        },
+        color_discrete_sequence=PALETTE,
         opacity=OPACITY,
+        template="plotly_dark",
+        custom_data=["cluster"],
     )
+    fig.update_traces(hoverinfo="skip", hovertemplate=None)
     fig.update_traces(marker=dict(size=DOT_SIZE))
+    fig.for_each_trace(lambda t: t.update(legendgroup=f"cluster_{t.customdata[0][0]}"))
+    # fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+    # fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+    cluster_to_topic = df.groupby("cluster")["topic"].first().to_dict()
+    for cluster_id, (hull_x, hull_y) in get_convex_hulls_2d(space).items():
+        fig.add_trace(
+            go.Scatter(
+                x=hull_x,
+                y=hull_y,
+                mode="lines",
+                fill="toself",
+                opacity=0.5,
+                name=f"{cluster_id} : {cluster_to_topic[cluster_id]}",
+                legendgroup=f"cluster_{cluster_id}",
+                showlegend=False,
+                line=dict(color=PALETTE[int(cluster_id) % len(PALETTE)]),
+            )
+        )
+
     fig.update_layout(
         title=space.title,
         width=WIDTH,
         height=HEIGHT,
-        scene=dict(
-            bgcolor="black",
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            zaxis=dict(visible=False),
-        ),
     )
     app = Dash(__name__)
     app.layout = html.Div([dcc.Graph(figure=fig)])
