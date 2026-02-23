@@ -59,7 +59,9 @@ def visualize(
             zaxis=dict(visible=False),
         ),
     )
-    fig.show()
+    app = Dash(__name__)
+    app.layout = html.Div([dcc.Graph(figure=fig)])
+    app.run(debug=False)
 
 
 """ ---------------------------------------------------------- """
