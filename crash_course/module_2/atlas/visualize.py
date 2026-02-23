@@ -8,6 +8,7 @@ from crash_course.module_2.atlas.cluster import get_min_max_distance
 from crash_course.module_2.atlas.vector_space import VectorSpace
 from dash import Dash, Input, Output, dcc, html
 from hdbscan.plots import CondensedTree, SingleLinkageTree
+from pydantic.types import StrictInt
 
 logger = logging.getLogger(__name__)
 
@@ -24,30 +25,30 @@ def visualize(
     HEIGHT = 800
     DOT_SIZE = 4
     OPACITY = 0.5
-    if debug:
-        show_debug_info(space.condensed_tree, space.single_linkage_tree)
-
-    df = space.as_df()
-    # graph clusters
+    # if debug:
+    # show_debug_info(space.condensed_tree, space.single_linkage_tree)
     if not space.has_position_3d:
         raise ValueError("3d position has not been set on the VectorSpace")
 
+    df = space.as_df().sort_values("cluster")
+    df = df[df["cluster"].astype(str) != "-1"]
+    df["label"] = df["cluster"].astype(str) + " : " + df["topic"].astype(str)
     fig = px.scatter_3d(
         df,
         x="3d_x",
         y="3d_y",
         z="3d_z",
-        opacity=OPACITY,
-        color="topic",
-        color_discrete_sequence=px.colors.qualitative.Bold,
+        color="label",
+        color_discrete_sequence=px.colors.qualitative.Plotly,
         hover_data={
             "3d_x": False,
             "3d_y": False,
             "3d_z": False,
+            "topic": True,
         },
+        opacity=OPACITY,
     )
     fig.update_traces(marker=dict(size=DOT_SIZE))
-
     fig.update_layout(
         title=space.title,
         width=WIDTH,
@@ -61,10 +62,57 @@ def visualize(
     )
     app = Dash(__name__)
     app.layout = html.Div([dcc.Graph(figure=fig)])
-    app.run(debug=False)
+    app.run(debug=debug)
 
 
-""" ---------------------------------------------------------- """
+def visualize_2d(
+    space: VectorSpace,
+    debug=False,
+) -> None:
+    # todo: this function shouldnt access internal details of vectorspace
+    """
+    Generate a plot of vectorspace
+    """
+    WIDTH = 1200
+    HEIGHT = 800
+    DOT_SIZE = 12
+    OPACITY = 0.6
+    # if debug:
+    # show_debug_info(space.condensed_tree, space.single_linkage_tree)
+    if not space.has_position_2d:
+        raise ValueError("2d position has not been set on the VectorSpace")
+
+    df = space.as_df().sort_values("cluster")
+    df = df[df["cluster"].astype(str) != "-1"]
+    df["label"] = df["cluster"].astype(str) + " : " + df["topic"].astype(str)
+    fig = px.scatter(
+        df,
+        x="2d_x",
+        y="2d_y",
+        color="label",
+        color_discrete_sequence=px.colors.qualitative.Plotly,
+        hover_data={
+            "2d_x": False,
+            "2d_y": False,
+            "topic": True,
+        },
+        opacity=OPACITY,
+    )
+    fig.update_traces(marker=dict(size=DOT_SIZE))
+    fig.update_layout(
+        title=space.title,
+        width=WIDTH,
+        height=HEIGHT,
+        scene=dict(
+            bgcolor="black",
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            zaxis=dict(visible=False),
+        ),
+    )
+    app = Dash(__name__)
+    app.layout = html.Div([dcc.Graph(figure=fig)])
+    app.run(debug=debug)
 
 
 def show_debug_info(ct: CondensedTree, slt: SingleLinkageTree):
@@ -75,6 +123,11 @@ def show_debug_info(ct: CondensedTree, slt: SingleLinkageTree):
     ax2.set_title("Single Linkage Tree")
     plt.tight_layout()
     plt.show()
+
+
+"""
+Slider for variable cut_distance
+"""
 
 
 def build_figure(space: VectorSpace, cut_distance: float) -> go.Figure:

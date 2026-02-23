@@ -24,7 +24,6 @@ class VectorSpace:
         self.clusters = (
             pd.DataFrame()
         )  # will start maintaining a 2nd table for clusters
-        self.has_position_3d = False
 
     def as_df(self) -> pd.DataFrame:
         if "topic" not in self.df:
@@ -62,7 +61,7 @@ class VectorSpace:
                 f"Expected input matrix to have shape ({len(self.embeddings)}, 3) but got {matrix.shape}"
             )
         self.df[["3d_x", "3d_y", "3d_z"]] = matrix
-        self.has_position_3d = True
+        self._has_position_3d = True
 
     def set_positions_2d(self, matrix: np.ndarray):
         num_vectors = matrix.shape[0]
@@ -72,6 +71,21 @@ class VectorSpace:
                 f"Expected input matrix to have shape ({len(self.embeddings)}, 2) but got {matrix.shape}"
             )
         self.df[["2d_x", "2d_y"]] = matrix
+        self._has_position_2d = True
+
+    @property
+    def has_position_3d(self) -> bool:
+        if not hasattr(self, "_has_position_3d"):
+            self._has_position_3d = all(
+                e in self.df.columns for e in ["3d_x", "3d_y", "3d_z"]
+            )
+        return self._has_position_3d
+
+    @property
+    def has_position_2d(self) -> bool:
+        if not hasattr(self, "_has_position_2d"):
+            self._has_position_2d = all(e in self.df.columns for e in ["2d_x", "2d_y"])
+        return self._has_position_2d
 
     def _load_clusters(self):
         self.cluster_cache = dict()
@@ -106,9 +120,6 @@ class VectorSpace:
         instance.condensed_tree = CondensedTree(ct_df.to_records(index=False), labels)
         instance.single_linkage_tree = single_linkage_tree_from_df(
             pd.read_parquet(root / "slt.parquet")
-        )
-        instance.has_position_3d = all(
-            e in instance.df.columns for e in ["3d_x", "3d_y", "3d_z"]
         )
         instance.title = save_name
         instance._load_clusters()

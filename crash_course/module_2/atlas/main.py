@@ -8,11 +8,15 @@ from crash_course.module_2.atlas.cluster import (
     get_cluster_centroids,
     get_cluster_topics,
 )
-from crash_course.module_2.atlas.dimensionality_reducer import transform_to_3d
+from crash_course.module_2.atlas.dimensionality_reducer import (
+    transform_to_2d,
+    transform_to_3d,
+)
 from crash_course.module_2.atlas.ingest import ingest_pdf
 from crash_course.module_2.atlas.vector_space import VectorSpace
 from crash_course.module_2.atlas.visualize import (
     visualize,
+    visualize_2d,
     visualize_dynamic,
 )
 from crash_course.module_2.utils import find_a_pdf, where_am_i
@@ -23,6 +27,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--load", metavar="SAVE_NAME", help="Load a saved vector space")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    parser.add_argument(
+        "--two-d", action="store_true", help="Enable 2d visualization mode"
+    )
     args = parser.parse_args()
 
     if args.debug:
@@ -35,12 +42,16 @@ if __name__ == "__main__":
         with open(find_a_pdf(where_am_i(__file__)), mode="rb") as f:
             space = ingest_pdf("Fundamentals of Data Engineering", f)
         generate_clusters(space, debug=False)
+        transform_to_2d(space)
         transform_to_3d(space)  # for visualization
         classify_cluster_topics(space)
         get_cluster_centroids(space, 5)
         # space.set_cluster_attribute("topic", pd.Series(get_cluster_topics(space)))
         space.save("fde")
 
-    visualize(space, bool(args.debug))
+    if args.two_d:
+        visualize_2d(space, bool(args.debug))
+    else:
+        visualize(space, bool(args.debug))
 else:
     print(__name__)
